@@ -1,7 +1,7 @@
 import { X } from "lucide-react";
 import { useI18n } from "@/shared/hooks/useI18n";
 import { formatDateTime } from "@/shared/utils/formatDate";
-import { formatUsd, formatCompactUsd } from "@/shared/utils/formatCurrency";
+import { formatCurrency, formatCompactCurrency } from "@/shared/utils/formatCurrency";
 import {
   Card,
   CardContent,
@@ -15,9 +15,10 @@ import { cn } from "@/shared/utils/cn";
 
 interface CoinDetailsProps {
   coin: Coin;
+  currency: string;
 }
 
-function CoinDetailsHeader({ coin }: CoinDetailsProps) {
+function CoinDetailsHeader({ coin }: { coin: Coin }) {
   return (
     <div className="flex items-center gap-3">
       <img src={coin.image} alt={coin.name} className="size-10 shrink-0" />
@@ -29,7 +30,7 @@ function CoinDetailsHeader({ coin }: CoinDetailsProps) {
   );
 }
 
-function CoinDetailsBody({ coin }: CoinDetailsProps) {
+function CoinDetailsBody({ coin, currency }: CoinDetailsProps) {
   const { t } = useI18n();
   const isPositive = (coin.price_change_percentage_24h ?? 0) >= 0;
 
@@ -40,7 +41,7 @@ function CoinDetailsBody({ coin }: CoinDetailsProps) {
           {t("common:dashboard.details.price")}
         </p>
         <p className="font-mono text-xl font-semibold">
-          {formatUsd(coin.current_price)}
+          {formatCurrency(coin.current_price, currency)}
         </p>
         <p
           className={cn(
@@ -60,13 +61,13 @@ function CoinDetailsBody({ coin }: CoinDetailsProps) {
           <p className="text-muted-foreground">
             {t("common:dashboard.details.high24h")}
           </p>
-          <p className="font-mono">{formatUsd(coin.high_24h)}</p>
+          <p className="font-mono">{formatCurrency(coin.high_24h, currency)}</p>
         </div>
         <div>
           <p className="text-muted-foreground">
             {t("common:dashboard.details.low24h")}
           </p>
-          <p className="font-mono">{formatUsd(coin.low_24h)}</p>
+          <p className="font-mono">{formatCurrency(coin.low_24h, currency)}</p>
         </div>
       </div>
 
@@ -74,7 +75,9 @@ function CoinDetailsBody({ coin }: CoinDetailsProps) {
         <p className="text-muted-foreground">
           {t("common:dashboard.details.volume24h")}
         </p>
-        <p className="font-mono">{formatCompactUsd(coin.total_volume)}</p>
+        <p className="font-mono">
+          {formatCompactCurrency(coin.total_volume, currency)}
+        </p>
       </div>
 
       <div>
@@ -91,7 +94,7 @@ interface CoinDetailsPanelProps extends CoinDetailsProps {
   onClose: () => void;
 }
 
-export function CoinDetailsPanel({ coin, onClose }: CoinDetailsPanelProps) {
+export function CoinDetailsPanel({ coin, currency, onClose }: CoinDetailsPanelProps) {
   const { t } = useI18n();
 
   return (
@@ -108,7 +111,7 @@ export function CoinDetailsPanel({ coin, onClose }: CoinDetailsPanelProps) {
         <CoinDetailsHeader coin={coin} />
       </CardHeader>
       <CardContent className="pt-0">
-        <CoinDetailsBody coin={coin} />
+        <CoinDetailsBody coin={coin} currency={currency} />
       </CardContent>
     </Card>
   );
@@ -122,6 +125,7 @@ interface CoinDetailsDialogProps extends CoinDetailsProps {
 /** Mobile: the same details shown as a modal instead of a side panel. */
 export function CoinDetailsDialog({
   coin,
+  currency,
   open,
   onOpenChange,
 }: CoinDetailsDialogProps) {
@@ -134,7 +138,7 @@ export function CoinDetailsDialog({
         <div className="mb-2">
           <CoinDetailsHeader coin={coin} />
         </div>
-        <CoinDetailsBody coin={coin} />
+        <CoinDetailsBody coin={coin} currency={currency} />
       </DialogContent>
     </Dialog>
   );

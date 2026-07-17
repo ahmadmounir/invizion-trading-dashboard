@@ -3,5 +3,5 @@ export { cn, isPathActive } from './cn';
 export * from './i18n';
 export * from './languages';
 export { formatDate, formatDateTime } from './formatDate';
-export { formatUsd, formatCompactUsd } from './formatCurrency';
+export { formatCurrency, formatCompactCurrency } from './formatCurrency';
 export * from './phone';

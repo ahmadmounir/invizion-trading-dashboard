@@ -1,13 +1,20 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { RefreshCw, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, RefreshCw, Search } from "lucide-react";
 import { getCoins } from "@/features/dashboard/api/coinsApi";
 import type { Coin } from "@/features/dashboard/types";
+import {
+  COINS_PER_PAGE,
+  TOTAL_PAGES,
+  TOTAL_COINS,
+  CURRENCY_OPTIONS,
+  DEFAULT_CURRENCY,
+} from "@/features/dashboard/constants";
 import { useI18n } from "@/shared/hooks/useI18n";
 import { useDebounce } from "@/shared/hooks/useDebounce";
 import { useIsMobile } from "@/shared/hooks/useMobile";
 import { cn } from "@/shared/utils/cn";
-import { formatUsd, formatCompactUsd } from "@/shared/utils/formatCurrency";
+import { formatCurrency, formatCompactCurrency } from "@/shared/utils/formatCurrency";
 import {
   Table,
   TableBody,
@@ -19,6 +26,11 @@ import {
   Button,
   DataError,
   Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/shared/components/ui";
 import {
   CoinDetailsPanel,
@@ -33,6 +45,8 @@ export default function Dashboard() {
   const [searchText, setSearchText] = useState("");
   const debouncedSearchText = useDebounce(searchText, 500);
   const [selectedCoinId, setSelectedCoinId] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [currency, setCurrency] = useState(DEFAULT_CURRENCY);
   const isMobile = useIsMobile(PANEL_BREAKPOINT);
 
   const {
@@ -42,9 +56,9 @@ export default function Dashboard() {
     isError,
     refetch,
   } = useQuery({
-    queryKey: ["coins"],
-    queryFn: getCoins,
-    refetchInterval: 10000
+    queryKey: ["coins", page, currency],
+    queryFn: () => getCoins({ page, vsCurrency: currency }),
+    refetchInterval: 10000,
   });
 
   const filteredCoins = useMemo(() => {
@@ -60,6 +74,20 @@ export default function Dashboard() {
   const selectedCoin: Coin | undefined = coins.find(
     (coin) => coin.id === selectedCoinId,
   );
+
+  const handleCurrencyChange = (value: string) => {
+    setCurrency(value);
+    setPage(1);
+    setSelectedCoinId(null);
+  };
+
+  const handlePageChange = (nextPage: number) => {
+    setPage(nextPage);
+    setSelectedCoinId(null);
+  };
+
+  const rangeStart = (page - 1) * COINS_PER_PAGE + 1;
+  const rangeEnd = Math.min(page * COINS_PER_PAGE, TOTAL_COINS);
 
   return (
     <div className="flex h-full flex-col space-y-6">
@@ -88,6 +116,19 @@ export default function Dashboard() {
               className="ltr:ps-9 rtl:pe-9"
             />
           </div>
+
+          <Select value={currency} onValueChange={handleCurrencyChange}>
+            <SelectTrigger className="w-[110px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {CURRENCY_OPTIONS.map((option) => (
+                <SelectItem key={option.code} value={option.code}>
+                  {option.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
           <Button
             variant="outline"
@@ -198,7 +239,7 @@ export default function Dashboard() {
                               </div>
                             </TableCell>
                             <TableCell className="px-6 py-3 text-end font-mono">
-                              {formatUsd(coin.current_price)}
+                              {formatCurrency(coin.current_price, currency)}
                             </TableCell>
                             <TableCell
                               className={cn(
@@ -215,7 +256,7 @@ export default function Dashboard() {
                               %
                             </TableCell>
                             <TableCell className="pe-6 py-3 text-end font-mono">
-                              {formatCompactUsd(coin.total_volume)}
+                              {formatCompactCurrency(coin.total_volume, currency)}
                             </TableCell>
                           </TableRow>
                         );
@@ -224,6 +265,47 @@ export default function Dashboard() {
                   </TableBody>
                 </Table>
               </div>
+
+              {/* Pagination */}
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-3 border-t bg-muted/20">
+                <div className="text-muted-foreground py-2">
+                  {t("common:pagination.showing")} {rangeStart}-{rangeEnd}{" "}
+                  {t("common:pagination.of")} {TOTAL_COINS}
+                </div>
+                <div className="flex items-center gap-1">
+                  <Button
+                    title={t("common:previous")}
+                    variant="outline"
+                    size="icon"
+                    onClick={() => handlePageChange(page - 1)}
+                    disabled={page === 1 || isFetching}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  {Array.from({ length: TOTAL_PAGES }, (_, i) => i + 1).map(
+                    (pageNumber) => (
+                      <Button
+                        key={pageNumber}
+                        variant={pageNumber === page ? "default" : "outline"}
+                        size="icon"
+                        onClick={() => handlePageChange(pageNumber)}
+                        disabled={isFetching}
+                      >
+                        {pageNumber}
+                      </Button>
+                    ),
+                  )}
+                  <Button
+                    title={t("common:next")}
+                    variant="outline"
+                    size="icon"
+                    onClick={() => handlePageChange(page + 1)}
+                    disabled={page === TOTAL_PAGES || isFetching}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
             </div>
           )}
         </div>
@@ -231,6 +313,7 @@ export default function Dashboard() {
         {selectedCoin && !isMobile && (
           <CoinDetailsPanel
             coin={selectedCoin}
+            currency={currency}
             onClose={() => setSelectedCoinId(null)}
           />
         )}
@@ -239,6 +322,7 @@ export default function Dashboard() {
       {selectedCoin && (
         <CoinDetailsDialog
           coin={selectedCoin}
+          currency={currency}
           open={isMobile}
           onOpenChange={(open) => {
             if (!open) setSelectedCoinId(null);
