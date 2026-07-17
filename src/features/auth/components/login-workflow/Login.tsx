@@ -1,14 +1,14 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
-import { login, resolveAuthChallenge } from "@/features/auth/api/authApi";
-import type { LocationState } from "@/shared/types/api";
+import { login, DEMO_CREDENTIALS } from "@/shared/services/localAuth";
+import { useProfileStore } from "@/shared/stores/profileStore";
+import type { LocationState } from "@/features/auth/types";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { showToast } from "@/shared/components/ui/toast-config";
 import { useI18n } from "@/shared/hooks/useI18n";
 import { AuthLayout } from "@/features/auth/components/layout/AuthLayout";
-import GoogleSignIn from "@/features/auth/components/login-workflow/GoogleSignIn";
 import {
   Button,
   Card,
@@ -37,13 +37,12 @@ const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const state = location.state as LocationState;
+  const setProfile = useProfileStore((s) => s.setProfile);
 
   // Define the form schema with translated messages
   const formSchema = z.object({
     email: z.string().min(1, { message: t("common:validation.required") }),
-    password: z.string().min(8, {
-      message: t("common:validation.required"),
-    }),
+    password: z.string().min(1, { message: t("common:validation.required") }),
   });
 
   // Redirect to where the user was trying to go before being sent to login
@@ -72,27 +71,14 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      const response = await login({
-        username: data.email,
-        password: data.password,
-      });
+      const result = login(data.email, data.password);
 
-      if (!response.success || !response.data) {
-        throw new Error(response.message || "Failed to login");
+      if (!result.success || !result.user) {
+        throw new Error(result.message || "Failed to login");
       }
 
-      const outcome = await resolveAuthChallenge(response.data);
-
-      if (outcome.status === "access") {
-        // Profile + onboarding are already hydrated by resolveAuthChallenge.
-        // Return to wherever the user was trying to go, defaulting to home.
-        navigate(from, { replace: true });
-      } else {
-        navigate(outcome.path, {
-          replace: true,
-          state: { otpSentTo: outcome.otpSentTo },
-        });
-      }
+      setProfile(result.user);
+      navigate(from, { replace: true });
     } catch (err) {
       showToast.error(err instanceof Error ? err.message : "Login failed");
     } finally {
@@ -136,7 +122,7 @@ const Login = () => {
                         placeholder={t("email")}
                         type="text"
                         autoComplete="username"
-                        dir={isRTL ? "ltr" : "ltr"}
+                        dir="ltr"
                         {...field}
                       />
                     </FormControl>
@@ -150,17 +136,9 @@ const Login = () => {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <div className="flex items-center justify-between">
-                      <FormLabel className="font-semibold">
-                        {t("password")}
-                      </FormLabel>
-                      <Link
-                        to="/auth/reset-password"
-                        className="inline-block  text-primary hover:underline"
-                      >
-                        {t("auth:forgotPassword")}
-                      </Link>
-                    </div>
+                    <FormLabel className="font-semibold">
+                      {t("password")}
+                    </FormLabel>
                     <FormControl>
                       <Input
                         placeholder={t("auth:passwordPlaceholder")}
@@ -190,15 +168,12 @@ const Login = () => {
                 </p>
               </div>
 
-              <div className="relative flex items-center gap-3">
-                <div className="flex-1 border-t border-border" />
-                <span className="text-muted-foreground shrink-0">
-                  {t("auth:orContinueWith")}
-                </span>
-                <div className="flex-1 border-t border-border" />
-              </div>
-
-              <GoogleSignIn />
+              <p className="text-center text-muted-foreground">
+                {t("auth:demoCredentialsHint", {
+                  email: DEMO_CREDENTIALS.email,
+                  password: DEMO_CREDENTIALS.password,
+                })}
+              </p>
             </form>
           </Form>
         </CardContent>

@@ -1,9 +1,5 @@
 import { Languages, Check } from "lucide-react";
-import { useState } from "react";
 import { useI18n } from "@/shared/hooks/useI18n";
-import { updateProfileLanguage } from "@/shared/services/profileService";
-import { showToast } from "@/shared/components/ui/toast-config";
-import { useProfile, useProfileStore } from "@/shared/stores/profileStore";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,45 +31,17 @@ export function LanguageSwitcher({
   className,
 }: LanguageSwitcherProps) {
   const { t, i18n } = useI18n();
-  const profile = useProfile();
-  const updateProfile = useProfileStore((state) => state.updateProfile);
-  const [isUpdatingLanguage, setIsUpdatingLanguage] = useState(false);
 
-  const handleLanguageChange = async (language: string) => {
-    // Always update localStorage via i18n
+  // i18n.ts persists the language to localStorage on every change (see the
+  // `languageChanged` listener there) — no backend to sync to.
+  const handleLanguageChange = (language: string) => {
     i18n.changeLanguage(language);
-
-    // Check if user is authenticated (has token)
-    const token = localStorage.getItem("inviziontenantui-token");
-    if (token && profile) {
-      setIsUpdatingLanguage(true);
-      try {
-        const response = await updateProfileLanguage(language);
-        if (response.success) {
-          // Update profile store with new language
-          updateProfile({ language });
-          showToast.success(t("settings:preferences.languageUpdated"));
-        } else {
-          showToast.error(
-            response.message || t("settings:preferences.languageUpdateFailed"),
-          );
-        }
-      } catch {
-        showToast.error(t("settings:preferences.languageUpdateFailed"));
-      } finally {
-        setIsUpdatingLanguage(false);
-      }
-    }
   };
 
   // Select mode — a plain select/combobox with no search, for use in forms/settings
   if (mode === "select") {
     return (
-      <Select
-        value={i18n.language}
-        onValueChange={handleLanguageChange}
-        disabled={isUpdatingLanguage}
-      >
+      <Select value={i18n.language} onValueChange={handleLanguageChange}>
         <SelectTrigger className={className}>
           <SelectValue />
         </SelectTrigger>
@@ -90,33 +58,24 @@ export function LanguageSwitcher({
   if (mode === "submenu") {
     return (
       <DropdownMenuSub>
-        <DropdownMenuSubTrigger className="py-2" disabled={isUpdatingLanguage}>
+        <DropdownMenuSubTrigger className="py-2">
           <Languages className={`h-5 w-5 me-2`} />
           {t("common:language")}
         </DropdownMenuSubTrigger>
         <DropdownMenuSubContent>
-          <DropdownMenuItem
-            onClick={() => handleLanguageChange("tr")}
-            disabled={isUpdatingLanguage}
-          >
+          <DropdownMenuItem onClick={() => handleLanguageChange("tr")}>
             <div className="flex items-center justify-between w-full">
               <span>{t("common:languages.tr")}</span>
               {i18n.language === "tr" && <Check className="h-4 w-4" />}
             </div>
           </DropdownMenuItem>
-          <DropdownMenuItem
-            onClick={() => handleLanguageChange("en")}
-            disabled={isUpdatingLanguage}
-          >
+          <DropdownMenuItem onClick={() => handleLanguageChange("en")}>
             <div className="flex items-center justify-between w-full">
               <span>{t("common:languages.en")}</span>
               {i18n.language === "en" && <Check className="h-4 w-4" />}
             </div>
           </DropdownMenuItem>
-          <DropdownMenuItem
-            onClick={() => handleLanguageChange("ar")}
-            disabled={isUpdatingLanguage}
-          >
+          <DropdownMenuItem onClick={() => handleLanguageChange("ar")}>
             <div className="flex items-center justify-between w-full">
               <span>{t("common:languages.ar")}</span>
               {i18n.language === "ar" && <Check className="h-4 w-4" />}
@@ -131,10 +90,7 @@ export function LanguageSwitcher({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button
-          className="cursor-pointer p-2 rounded-md bg-muted transition-colors outline-0"
-          disabled={isUpdatingLanguage}
-        >
+        <button className="cursor-pointer p-2 rounded-md bg-muted transition-colors outline-0">
           <Languages className="h-4 w-4" />
           <span className="sr-only">{t("common:language")}</span>
         </button>
@@ -143,7 +99,6 @@ export function LanguageSwitcher({
         <DropdownMenuItem
           onClick={() => handleLanguageChange("tr")}
           className="flex items-center justify-between cursor-pointer"
-          disabled={isUpdatingLanguage}
         >
           <span>{t("common:languages.tr")}</span>
           {i18n.language === "tr" && <Check className="h-4 w-4" />}
@@ -151,7 +106,6 @@ export function LanguageSwitcher({
         <DropdownMenuItem
           onClick={() => handleLanguageChange("en")}
           className="flex items-center justify-between cursor-pointer"
-          disabled={isUpdatingLanguage}
         >
           <span>{t("common:languages.en")}</span>
           {i18n.language === "en" && <Check className="h-4 w-4" />}
@@ -159,7 +113,6 @@ export function LanguageSwitcher({
         <DropdownMenuItem
           onClick={() => handleLanguageChange("ar")}
           className="flex items-center justify-between cursor-pointer"
-          disabled={isUpdatingLanguage}
         >
           <span>{t("common:languages.ar")}</span>
           {i18n.language === "ar" && <Check className="h-4 w-4" />}

@@ -1,7 +1,6 @@
 export * from './Alert';
 export * from './Avatar';
 export * from './Badge';
-export * from './Breadcrumb';
 export * from './Button';
 export * from './calendar';
 export * from './Card';
@@ -31,8 +30,6 @@ export * from './Table';
 export * from './tabs';
 export * from './Textarea';
 export * from './Tooltip';
-export * from './AccessDenied';
-export * from './ColorSelector';
 export * from './UserDropdown';
 export * from './ConfirmDialog';
 export * from './PageHeader';

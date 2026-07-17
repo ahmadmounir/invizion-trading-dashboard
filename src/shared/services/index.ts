@@ -1,4 +1,2 @@
 // Shared services exports
-export * from './apiClient';
-export * from './profileService';
-export * from './ipService';
+export * from './localAuth';

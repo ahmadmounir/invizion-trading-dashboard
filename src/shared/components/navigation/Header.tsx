@@ -10,7 +10,7 @@ import {
 } from "@/shared/components/ui";
 import { useProfile } from "@/shared/stores/profileStore";
 import { useI18n } from "@/shared/hooks/useI18n";
-import type { Profile } from "@/shared/types/api";
+import type { PublicUser } from "@/shared/types/user";
 import getInitials from "@/shared/utils/getInitials";
 
 // Navigation links configuration
@@ -20,7 +20,7 @@ const navLinks = [
 ];
 
 // Get user data from profile
-function getUserData(profileData: Profile | null) {
+function getUserData(profileData: PublicUser | null) {
   if (profileData) {
     return {
       name: `${profileData.firstName} ${profileData.lastName}`,

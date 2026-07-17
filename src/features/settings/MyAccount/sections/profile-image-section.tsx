@@ -1,13 +1,10 @@
 import { useState } from "react";
 import { Camera, Pencil, User as UserIcon } from "lucide-react";
-import type { Profile } from "@/shared/types/api";
-import {
-  uploadProfileImage,
-  deleteProfileImage,
-} from "@/shared/services/profileImageService";
+import type { PublicUser } from "@/shared/types/user";
 import { showToast } from "@/shared/components/ui/toast-config";
 import { useI18n } from "@/shared/hooks/useI18n";
 import { useProfileStore } from "@/shared/stores/profileStore";
+import { updateStoredUser } from "@/shared/services/localAuth";
 import {
   Avatar,
   AvatarFallback,
@@ -19,13 +16,22 @@ import { ProfileImageModal } from "../components/profile-image-modal";
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
 
 interface ProfileImageSectionProps {
-  profile: Profile;
+  profile: PublicUser;
+}
+
+function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 }
 
 /**
  * Settings profile-image trigger. Clicking the avatar opens a modal where the
- * upload/remove operations happen; changes are applied immediately and synced
- * back into the Zustand profile store.
+ * image is picked and converted to a base64 data URI — there's no backend, so
+ * it's stored directly on the profile (Zustand + localStorage).
  */
 export function ProfileImageSection({ profile }: ProfileImageSectionProps) {
   const { t } = useI18n();
@@ -45,13 +51,10 @@ export function ProfileImageSection({ profile }: ProfileImageSectionProps) {
     }
     setIsUploading(true);
     try {
-      const res = await uploadProfileImage(file);
-      if (res.success && res.data) {
-        updateProfile({ imageUrl: res.data.imageUrl || null });
-        showToast.success(t("settings:profileImage.uploaded"));
-      } else {
-        showToast.error(res.message || t("settings:profileImage.uploadFailed"));
-      }
+      const base64 = await fileToBase64(file);
+      updateProfile({ imageUrl: base64 });
+      updateStoredUser(profile.id, { imageUrl: base64 });
+      showToast.success(t("settings:profileImage.uploaded"));
     } catch {
       showToast.error(t("settings:profileImage.uploadFailed"));
     } finally {
@@ -59,22 +62,13 @@ export function ProfileImageSection({ profile }: ProfileImageSectionProps) {
     }
   };
 
-  const handleConfirmDelete = async () => {
+  const handleConfirmDelete = () => {
     setIsRemoving(true);
-    try {
-      const res = await deleteProfileImage();
-      if (res.success) {
-        updateProfile({ imageUrl: null });
-        showToast.success(t("settings:profileImage.removed"));
-        setShowDeleteConfirm(false);
-      } else {
-        showToast.error(res.message || t("settings:profileImage.removeFailed"));
-      }
-    } catch {
-      showToast.error(t("settings:profileImage.removeFailed"));
-    } finally {
-      setIsRemoving(false);
-    }
+    updateProfile({ imageUrl: null });
+    updateStoredUser(profile.id, { imageUrl: null });
+    showToast.success(t("settings:profileImage.removed"));
+    setIsRemoving(false);
+    setShowDeleteConfirm(false);
   };
 
   return (

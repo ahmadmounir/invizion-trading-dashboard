@@ -289,5 +289,27 @@
     "maxFileCount": "Max {{count}} files",
     "maxFilesReached": "Max {{count}} files reached",
     "delivery": "Delivery",
-    "profitPrice": "Profit Price"
+    "profitPrice": "Profit Price",
+    "dashboard": {
+        "title": "Market Watch",
+        "description": "Live prices for the top coins by market cap.",
+        "searchPlaceholder": "Search by name or symbol...",
+        "noResults": "No assets match your search",
+        "table": {
+            "asset": "Asset",
+            "price": "Price",
+            "change24h": "24h Change",
+            "volume24h": "24h Volume"
+        },
+        "details": {
+            "price": "Price",
+            "high24h": "24h High",
+            "low24h": "24h Low",
+            "volume24h": "24h Volume",
+            "lastUpdated": "Last Updated"
+        },
+        "errors": {
+            "failedToLoad": "Failed to load market data"
+        }
+    }
 }

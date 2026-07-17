@@ -34,6 +34,7 @@ export function AuthLayout({ children }: AuthLayoutProps) {
           <Link
             to="/auth/login"
             className="flex items-center gap-3"
+            dir="ltr"
           >
             <img
               src="/assets/images/invizion_logo.png"

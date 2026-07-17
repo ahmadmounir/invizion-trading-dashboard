@@ -1,10 +1,7 @@
-import type { Profile } from "@/shared/types/api";
-import { useState, useEffect } from "react";
-import {
-  updateProfile,
-  fetchAndStoreProfile,
-  getTimezones,
-} from "@/shared/services/profileService";
+import type { PublicUser } from "@/shared/types/user";
+import { useState } from "react";
+import { useProfileStore } from "@/shared/stores/profileStore";
+import { updateStoredUser } from "@/shared/services/localAuth";
 import { showToast } from "@/shared/components/ui/toast-config";
 import { useI18n } from "@/shared/hooks/useI18n";
 import {
@@ -19,70 +16,34 @@ import {
   CardContent,
   CardDescription,
   CardTitle,
-  Combobox,
   FormFieldWrapper,
   Input,
   Label,
   PhoneInput,
-  type ComboboxOption,
 } from "@/shared/components/ui";
 
 interface ProfileSectionProps {
-  profile: Profile;
-  onProfileUpdate?: (updatedProfile: Profile) => void;
+  profile: PublicUser;
 }
 
-export function ProfileSection({
-  profile,
-  onProfileUpdate,
-}: ProfileSectionProps) {
+export function ProfileSection({ profile }: ProfileSectionProps) {
   const { t } = useI18n();
+  const updateProfile = useProfileStore((state) => state.updateProfile);
   const [isEditing, setIsEditing] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [timezonesLoading, setTimezonesLoading] = useState(false);
-  const [timezones, setTimezones] = useState<ComboboxOption[]>([]);
   const [formData, setFormData] = useState({
     firstName: profile.firstName,
     lastName: profile.lastName,
+    email: profile.email,
     phone: fromTurkishPhoneNumber(profile.phone),
-    timezoneId: profile.timezoneId || "",
-    language: profile.language || "en",
   });
-
-  // Fetch timezones on component mount
-  useEffect(() => {
-    const fetchTimezones = async () => {
-      setTimezonesLoading(true);
-      try {
-        const response = await getTimezones();
-        if (response.success && response.data) {
-          const timezoneOptions: ComboboxOption[] = Object.entries(
-            response.data,
-          ).map(([id, label]) => ({ value: id, label }));
-          setTimezones(timezoneOptions);
-        } else {
-          showToast.error(
-            response.message || t("settings:errors.failedToLoadTimezones"),
-          );
-        }
-      } catch {
-        showToast.error(t("settings:errors.failedToLoadTimezones"));
-      } finally {
-        setTimezonesLoading(false);
-      }
-    };
-
-    fetchTimezones();
-  }, [t]);
 
   const handleChange = () => {
     setIsEditing(true);
     setFormData({
       firstName: profile.firstName,
       lastName: profile.lastName,
+      email: profile.email,
       phone: fromTurkishPhoneNumber(profile.phone),
-      timezoneId: profile.timezoneId || "",
-      language: profile.language || "en",
     });
   };
 
@@ -91,60 +52,29 @@ export function ProfileSection({
     setFormData({
       firstName: profile.firstName,
       lastName: profile.lastName,
+      email: profile.email,
       phone: fromTurkishPhoneNumber(profile.phone),
-      timezoneId: profile.timezoneId || "",
-      language: profile.language || "en",
     });
   };
 
-  const canEditPhone = !profile.mobileRequiresVerification;
-
-  const handleUpdate = async () => {
-    if (canEditPhone && formData.phone && !isValidTurkishMobile(formData.phone)) {
+  const handleUpdate = () => {
+    if (formData.phone && !isValidTurkishMobile(formData.phone)) {
       showToast.error(t("validation.invalidTurkishMobile"));
       return;
     }
 
-    setIsLoading(true);
-    try {
-      const response = await updateProfile({
-        firstName: formData.firstName,
-        lastName: formData.lastName,
-        phone: canEditPhone
-          ? formData.phone
-            ? toTurkishPhoneNumber(formData.phone)
-            : ""
-          : profile.phone || "",
-        timezoneId: formData.timezoneId,
-        language: formData.language,
-      });
+    const updates = {
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      email: formData.email,
+      phone: formData.phone ? toTurkishPhoneNumber(formData.phone) : "",
+    };
 
-      if (response.success) {
-        setIsEditing(false);
-        const refreshResponse = await fetchAndStoreProfile();
-        if (refreshResponse.success && refreshResponse.data) {
-          onProfileUpdate?.(refreshResponse.data);
-          showToast.success(
-            response.message || t("common:messages.profileUpdated"),
-          );
-        }
-      } else {
-        showToast.error(
-          response.message || t("settings:errors.failedToUpdateProfile"),
-        );
-      }
-    } catch {
-      showToast.error(t("settings:errors.failedToUpdateProfile"));
-    } finally {
-      setIsLoading(false);
-    }
+    updateProfile(updates);
+    updateStoredUser(profile.id, updates);
+    setIsEditing(false);
+    showToast.success(t("common:messages.profileUpdated"));
   };
-
-  // Helper to get the display label for the current timezone
-  const currentTimezoneLabel =
-    timezones.find((tz) => tz.value === profile.timezoneId)?.label ||
-    profile.timezoneId ||
-    "-";
 
   return (
     <>
@@ -199,10 +129,32 @@ export function ProfileSection({
           </div>
 
           <div className="grid gap-4 sm:grid-cols-2">
+            {/* Email */}
+            <FormFieldWrapper>
+              <Label>{t("email")}</Label>
+              {isEditing ? (
+                <Input
+                  dir="ltr"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      email: e.target.value,
+                    }))
+                  }
+                />
+              ) : (
+                <div className="py-1" dir="ltr">
+                  {profile.email}
+                </div>
+              )}
+            </FormFieldWrapper>
+
             {/* Phone Number */}
             <FormFieldWrapper>
               <Label>{t("phoneNumber")}</Label>
-              {isEditing && canEditPhone ? (
+              {isEditing ? (
                 <PhoneInput
                   value={formData.phone}
                   onChange={(value) =>
@@ -218,24 +170,6 @@ export function ProfileSection({
                 </div>
               )}
             </FormFieldWrapper>
-
-            {/* Timezone */}
-            <FormFieldWrapper>
-              <Label>{t("timezone")}</Label>
-              {isEditing ? (
-                <Combobox
-                  options={timezones}
-                  value={formData.timezoneId}
-                  onValueChange={(value) =>
-                    setFormData((prev) => ({ ...prev, timezoneId: value }))
-                  }
-                  placeholder={t("placeholders.selectTimezone")}
-                  disabled={timezonesLoading}
-                />
-              ) : (
-                <div className="py-1">{currentTimezoneLabel}</div>
-              )}
-            </FormFieldWrapper>
           </div>
 
           <div className="flex gap-2">
@@ -245,16 +179,10 @@ export function ProfileSection({
               </Button>
             ) : (
               <>
-                <Button
-                  variant="ghost"
-                  onClick={handleCancel}
-                  disabled={isLoading}
-                >
+                <Button variant="ghost" onClick={handleCancel}>
                   {t("cancel")}
                 </Button>
-                <Button onClick={handleUpdate} disabled={isLoading}>
-                  {isLoading ? t("savingChanges") : t("saveChanges")}
-                </Button>
+                <Button onClick={handleUpdate}>{t("saveChanges")}</Button>
               </>
             )}
           </div>

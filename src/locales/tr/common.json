@@ -289,5 +289,27 @@
     "maxFileCount": "Maksimum {{count}} dosya",
     "maxFilesReached": "Maksimum {{count}} dosyaya ulaşıldı",
     "delivery": "Teslimat",
-    "profitPrice": "Kâr Fiyatı"
+    "profitPrice": "Kâr Fiyatı",
+    "dashboard": {
+        "title": "Piyasa Takibi",
+        "description": "Piyasa değerine göre en iyi kripto paraların canlı fiyatları.",
+        "searchPlaceholder": "İsim veya sembole göre ara...",
+        "noResults": "Aramanızla eşleşen varlık bulunamadı",
+        "table": {
+            "asset": "Varlık",
+            "price": "Fiyat",
+            "change24h": "24s Değişim",
+            "volume24h": "24s Hacim"
+        },
+        "details": {
+            "price": "Fiyat",
+            "high24h": "24s En Yüksek",
+            "low24h": "24s En Düşük",
+            "volume24h": "24s Hacim",
+            "lastUpdated": "Son Güncelleme"
+        },
+        "errors": {
+            "failedToLoad": "Piyasa verileri yüklenemedi"
+        }
+    }
 }

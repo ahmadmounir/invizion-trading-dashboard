@@ -1,7 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { register } from "@/features/auth/api/authApi.ts";
-import { getIpGeolocation } from "@/shared/services/ipService";
+import { register } from "@/shared/services/localAuth";
 import { showToast } from "@/shared/components/ui/toast-config";
 import { useI18n } from "@/shared/hooks/useI18n";
 import { Eye, EyeOff } from "lucide-react";
@@ -26,7 +25,6 @@ import {
   PasswordStrength,
   PhoneInput,
 } from "@/shared/components/ui";
-import GoogleSignIn from "../login-workflow/GoogleSignIn";
 import {
   TURKISH_MOBILE_REGEX,
   toTurkishPhoneNumber,
@@ -72,32 +70,9 @@ const Register = () => {
   // Define the form values type
   type FormValues = z.infer<typeof formSchema>;
   const [isLoading, setIsLoading] = useState(false);
-  const [timezone, setTimezone] = useState<string>("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const navigate = useNavigate();
-
-  // Fetch timezone from IP API
-  useEffect(() => {
-    const fetchTimezone = async () => {
-      try {
-        const response = await getIpGeolocation();
-
-        if (response.success && response.data && response.data.timezone) {
-          setTimezone(response.data.timezone);
-        } else {
-          const fallback = Intl.DateTimeFormat().resolvedOptions().timeZone;
-          setTimezone(fallback);
-        }
-      } catch (error) {
-        console.error("Error fetching timezone:", error);
-        const fallback = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        setTimezone(fallback);
-      }
-    };
-
-    fetchTimezone();
-  }, []);
 
   // Initialize form with react-hook-form and zod validation
   const form = useForm<FormValues>({
@@ -116,26 +91,25 @@ const Register = () => {
     setIsLoading(true);
 
     try {
-      // Adapt the data to match what the API expects
-      const response = await register({
+      const result = register({
         firstName: data.firstName,
         lastName: data.lastName,
         email: data.email,
-        username: "",
         password: data.password,
         phone: data.phone ? toTurkishPhoneNumber(data.phone) : "",
-        timezoneId: timezone,
       });
 
-      if (!response.success) {
-        throw new Error(response.message || "Failed to register");
+      if (!result.success) {
+        throw new Error(result.message || "Failed to register");
       }
 
       // Show success toast
       showToast.success(t("auth:registrationSuccess"));
 
       // Redirect to login page
-      navigate("/auth/login");
+      navigate("/auth/login", {
+        state: { successMessage: t("auth:registrationSuccess") },
+      });
     } catch (err) {
       console.error("Registration error:", err);
       showToast.error(
@@ -342,16 +316,6 @@ const Register = () => {
                     </Link>
                   </p>
                 </div>
-
-                <div className="relative flex items-center gap-3">
-                  <div className="flex-1 border-t border-border" />
-                  <span className="text-muted-foreground shrink-0">
-                    {t("auth:orContinueWith")}
-                  </span>
-                  <div className="flex-1 border-t border-border" />
-                </div>
-
-                <GoogleSignIn />
               </form>
             </Form>
           </CardContent>

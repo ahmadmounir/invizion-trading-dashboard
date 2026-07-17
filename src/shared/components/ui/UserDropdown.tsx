@@ -18,35 +18,25 @@ import {
   AvatarImage,
 } from "@/shared/components/ui/Avatar";
 import { LanguageSwitcher } from "@/shared/components/ui/LanguageSwitcher";
-import { logout } from "@/features/auth/api/authApi";
+import { logout } from "@/shared/services/localAuth";
 import { useProfile } from "@/shared/stores/profileStore";
-import type { Profile } from "@/shared/types/api";
+import type { PublicUser } from "@/shared/types/user";
 import getInitials from "@/shared/utils/getInitials";
 
 // Get user data from profile
-function getUserData(profileData: Profile | null) {
-  try {
-    if (profileData) {
-      return {
-        name: `${profileData.firstName} ${profileData.lastName}`,
-        email: profileData.email,
-        avatar: profileData.imageUrl || "",
-        username: profileData.email,
-        role: profileData.role,
-        tenantName: profileData.tenantName,
-      };
-    }
-  } catch (error) {
-    console.error("Error parsing profile data:", error);
+function getUserData(profileData: PublicUser | null) {
+  if (profileData) {
+    return {
+      name: `${profileData.firstName} ${profileData.lastName}`,
+      email: profileData.email,
+      avatar: profileData.imageUrl || "",
+    };
   }
 
   return {
-    name: "John Doe",
-    email: "john.doe@example.com",
+    name: "-",
+    email: "-",
     avatar: "",
-    username: "john.doe",
-    role: "Admin",
-    tenantName: null,
   };
 }
 
@@ -69,24 +59,14 @@ export function UserDropdown({
   const currentUser = useProfile();
   const user = getUserData(currentUser);
   const { t, i18n } = useI18n();
-  const [isLoggingOut, setIsLoggingOut] = React.useState(false);
 
   const handleNavigation = (path: string) => {
     navigate(path);
   };
 
-  const handleLogout = async () => {
-    setIsLoggingOut(true);
-    try {
-      await logout();
-      handleNavigation("/auth/login");
-    } catch (error) {
-      // Still navigate even if API fails (token already cleared)
-      console.error("Logout error:", error);
-      handleNavigation("/auth/login");
-    } finally {
-      setIsLoggingOut(false);
-    }
+  const handleLogout = () => {
+    logout();
+    handleNavigation("/auth/login");
   };
 
   return (
@@ -140,11 +120,7 @@ export function UserDropdown({
         <DropdownMenuSeparator />
 
         {/* Logout */}
-        <DropdownMenuItem
-          onClick={handleLogout}
-          disabled={isLoggingOut}
-          className="py-2 mt-2"
-        >
+        <DropdownMenuItem onClick={handleLogout} className="py-2 mt-2">
           <LogOut className={`h-5 w-5 me-2`} />
           {t("auth:logout")}
         </DropdownMenuItem>

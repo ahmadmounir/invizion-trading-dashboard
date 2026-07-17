@@ -1,5 +1,5 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
-import { isAuthenticated } from "@/shared/services/apiClient";
+import { isAuthenticated } from "@/shared/services/localAuth";
 
 export const ProtectedRoute = () => {
   const location = useLocation();
