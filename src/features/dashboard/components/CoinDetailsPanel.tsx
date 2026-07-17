@@ -1,5 +1,7 @@
+import { X } from "lucide-react";
 import { useI18n } from "@/shared/hooks/useI18n";
 import { formatDateTime } from "@/shared/utils/formatDate";
+import { formatUsd, formatCompactUsd } from "@/shared/utils/formatCurrency";
 import {
   Card,
   CardContent,
@@ -13,15 +15,6 @@ import { cn } from "@/shared/utils/cn";
 
 interface CoinDetailsProps {
   coin: Coin;
-}
-
-function formatUsd(value: number): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: value < 1 ? 4 : 2,
-    maximumFractionDigits: value < 1 ? 6 : 2,
-  }).format(value);
 }
 
 function CoinDetailsHeader({ coin }: CoinDetailsProps) {
@@ -81,7 +74,7 @@ function CoinDetailsBody({ coin }: CoinDetailsProps) {
         <p className="text-muted-foreground">
           {t("common:dashboard.details.volume24h")}
         </p>
-        <p className="font-mono">{formatUsd(coin.total_volume)}</p>
+        <p className="font-mono">{formatCompactUsd(coin.total_volume)}</p>
       </div>
 
       <div>
@@ -94,9 +87,23 @@ function CoinDetailsBody({ coin }: CoinDetailsProps) {
   );
 }
 
-export function CoinDetailsPanel({ coin }: CoinDetailsProps) {
+interface CoinDetailsPanelProps extends CoinDetailsProps {
+  onClose: () => void;
+}
+
+export function CoinDetailsPanel({ coin, onClose }: CoinDetailsPanelProps) {
+  const { t } = useI18n();
+
   return (
-    <Card className="hidden lg:flex lg:w-[320px] lg:shrink-0 lg:sticky lg:top-20 lg:self-start lg:min-h-[250px]  flex-col">
+    <Card className="relative hidden lg:flex lg:w-[320px] lg:shrink-0 lg:sticky lg:top-20 lg:self-start lg:min-h-[250px] flex-col">
+      <button
+        type="button"
+        onClick={onClose}
+        className="absolute end-4 top-4 cursor-pointer rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+      >
+        <X className="h-4 w-4" />
+        <span className="sr-only">{t("common:close")}</span>
+      </button>
       <CardHeader className="flex flex-row items-center gap-3 space-y-0">
         <CoinDetailsHeader coin={coin} />
       </CardHeader>

@@ -7,6 +7,7 @@ import { useI18n } from "@/shared/hooks/useI18n";
 import { useDebounce } from "@/shared/hooks/useDebounce";
 import { useIsMobile } from "@/shared/hooks/useMobile";
 import { cn } from "@/shared/utils/cn";
+import { formatUsd, formatCompactUsd } from "@/shared/utils/formatCurrency";
 import {
   Table,
   TableBody,
@@ -27,15 +28,6 @@ import {
 // Matches the lg breakpoint the table/panel layout switches on below.
 const PANEL_BREAKPOINT = 1024;
 
-function formatUsd(value: number): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: value < 1 ? 4 : 2,
-    maximumFractionDigits: value < 1 ? 6 : 2,
-  }).format(value);
-}
-
 export default function Dashboard() {
   const { t } = useI18n();
   const [searchText, setSearchText] = useState("");
@@ -52,6 +44,7 @@ export default function Dashboard() {
   } = useQuery({
     queryKey: ["coins"],
     queryFn: getCoins,
+    refetchInterval: 10000
   });
 
   const filteredCoins = useMemo(() => {
@@ -92,7 +85,7 @@ export default function Dashboard() {
               placeholder={t("common:dashboard.searchPlaceholder")}
               value={searchText}
               onChange={(e) => setSearchText(e.target.value)}
-              className="ps-9"
+              className="ltr:ps-9 rtl:pe-9"
             />
           </div>
 
@@ -222,7 +215,7 @@ export default function Dashboard() {
                               %
                             </TableCell>
                             <TableCell className="pe-6 py-3 text-end font-mono">
-                              {formatUsd(coin.total_volume)}
+                              {formatCompactUsd(coin.total_volume)}
                             </TableCell>
                           </TableRow>
                         );
@@ -235,7 +228,12 @@ export default function Dashboard() {
           )}
         </div>
 
-        {selectedCoin && !isMobile && <CoinDetailsPanel coin={selectedCoin} />}
+        {selectedCoin && !isMobile && (
+          <CoinDetailsPanel
+            coin={selectedCoin}
+            onClose={() => setSelectedCoinId(null)}
+          />
+        )}
       </div>
 
       {selectedCoin && (
