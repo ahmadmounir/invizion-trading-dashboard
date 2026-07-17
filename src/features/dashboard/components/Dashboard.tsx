@@ -58,7 +58,7 @@ export default function Dashboard() {
   } = useQuery({
     queryKey: ["coins", page, currency],
     queryFn: () => getCoins({ page, vsCurrency: currency }),
-    refetchInterval: 10000,
+    refetchInterval: 10000 * 6,
   });
 
   const filteredCoins = useMemo(() => {
