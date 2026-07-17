@@ -27,7 +27,7 @@ const queryClient = new QueryClient();
 
 // Add this script to set theme on initial page load
 const setInitialTheme = () => {
-  const theme = localStorage.getItem("inviziontenantui-theme") || "system";
+  const theme = localStorage.getItem("inviziontenantui-theme") || "dark";
   const root = window.document.documentElement;
 
   if (theme === "system") {
@@ -109,7 +109,7 @@ function AppContent() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeProvider defaultTheme="system" storageKey="inviziontenantui-theme">
+      <ThemeProvider defaultTheme="dark" storageKey="inviziontenantui-theme">
         <Router>
           <AppContent />
         </Router>

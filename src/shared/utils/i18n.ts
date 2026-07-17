@@ -35,14 +35,14 @@ const SUPPORTED_LANGUAGES = ['tr', 'en', 'ar'] as const;
 const RTL_LANGUAGES = ['ar'];
 const LANGUAGE_STORAGE_KEY = 'inviziontenantui-language';
 
-// Defaults to Turkish, but the user can change it any time via
+// Defaults to English, but the user can change it any time via
 // <LanguageSwitcher /> (auth header, main app header, Settings > Preferences).
 // This only reads localStorage, which LanguageSwitcher keeps in sync.
 const getInitialLanguage = (): string => {
   const stored = localStorage.getItem(LANGUAGE_STORAGE_KEY);
   return (SUPPORTED_LANGUAGES as readonly string[]).includes(stored ?? '')
     ? (stored as string)
-    : 'tr';
+    : 'en';
 };
 
 i18n

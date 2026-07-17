@@ -9,7 +9,7 @@
   <script>
     // Immediately set the initial theme to prevent flash of wrong theme
     (function () {
-      const theme = localStorage.getItem('inviziontenantui-theme') || 'system';
+      const theme = localStorage.getItem('inviziontenantui-theme') || 'dark';
       if (theme === 'system') {
         const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
         document.documentElement.classList.add(systemTheme);
